@@ -28,12 +28,17 @@ Teste realizado com base na documentação oficial do Fluentd para deploy via Do
 Foram utilizadas apenas configurações básicas com o objetivo de validar rapidamente o funcionamento da stack.
 Esta configuração não atende aos requisitos do ambiente de produção.
 
-#### iniciar ambiente quick-start
+#### Iniciar ambiente quick-start
 ```bash
 cd .\quick-start\
 ```
 ```bash
 docker compose up --detach
 ```
+#### Comando de teste
+```bash
+curl http://localhost:8080
+```
+> Caso a aplicação web não inicie corretamente ao executar `docker compose up --detach`, basta inicializá-la manualmente separadamente.
 
 #### TO-DO - Subir Ambiente Similar a Produção
