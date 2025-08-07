@@ -59,6 +59,7 @@ services:
     volumes:
       - ./forwarder/conf:/fluentd/etc
       - ./forwarder/log:/fluentd/log
+      - ./forwarder/buf:/fluentd/buffer
       - ./web/log:/fluentd/containers/log
     ports:
       - "23224:23224"
