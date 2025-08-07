@@ -18,6 +18,7 @@ Centralizar e visualizar os logs gerados pelos containers utilizando uma stack e
 - [Documentação Fluentd - Configuração conexão com Elasticsearch](https://docs.fluentd.org/output/elasticsearch)
 - [Documentação Docker - Logging Drivers Fluentd](https://docs.docker.com/engine/logging/drivers/fluentd/)
 - [Docker hub - Imagens do Fluentd, Elasticsearch e Kibana](https://hub.docker.com/)
+- [Métodos Ruby no Filtro do Fluentd](https://docs.ruby-lang.org/en/master/Socket.html#method-c-gethostname)
 
 ### Planejamento do Ambiente de Teste
 #### Requisitos
@@ -81,6 +82,11 @@ docker compose up --detach
 ```bash
 curl http://localhost:8080
 ```
+#### Observações
+- Como ficaria a separação em relação ao fluentd?
+Separar por tipo de log que o container gera, então para cada tipo de log se teria um fluentd ou separar por tipo de aplicação web, android, go, delphi e para cada um ter um fluentd
+- No modo de HA deve ter uma forma de identificar os containers que estão enviando os logs
+- No modo de HA deve ter rotação de logs
 
 ### quick-start
 Teste realizado com base na documentação oficial do Fluentd para deploy via Docker Compose.
@@ -99,3 +105,5 @@ docker compose up --detach
 curl http://localhost:8080
 ```
 > Caso a aplicação web não inicie corretamente ao executar `docker compose up --detach`, basta inicializá-la manualmente separadamente.
+
+## TO-DO Criar ambientes com infraestrutura diferente para comparar vantagens e desvantagens
