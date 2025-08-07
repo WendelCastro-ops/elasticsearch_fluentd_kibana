@@ -1,0 +1,88 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.enabled=false
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - efk
+    healthcheck:
+      test: curl --silent --fail localhost:9200 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.1.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    networks:
+      - efk
+    healthcheck:
+      test: curl --silent --fail localhost:5601 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  aggregator:
+    build:
+      context: ./fluentd
+    container_name: aggregator
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+      - ./fluentd/log:/fluentd/log
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    networks:
+      - efk
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  forwarder:
+    build:
+      context: ./forwarder
+    container_name: forwarder
+    volumes:
+      - ./forwarder/conf:/fluentd/etc
+      - ./forwarder/log:/fluentd/log
+      - ./web/log:/fluentd/containers/log
+    ports:
+      - "23224:23224"
+      - "23224:23224/udp"
+    networks:
+      - efk
+    depends_on:
+      - aggregator
+    restart: unless-stopped
+
+  web:
+    image: httpd
+    ports:
+      - "8080:80"
+    depends_on:
+      - forwarder
+    volumes:
+      - ./web/log:/usr/local/apache2/logs
+      - ./web/httpd.conf:/usr/local/apache2/conf/httpd.conf
+    networks:
+      - efk
+      
+volumes:
+  esdata:
+
+networks:
+  efk:

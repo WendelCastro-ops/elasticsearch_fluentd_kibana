@@ -23,6 +23,65 @@ Centralizar e visualizar os logs gerados pelos containers utilizando uma stack e
 #### Requisitos
 - Docker e Docker Compose.
 
+### PRD - Alta Disponibilidade
+#### Cenário: Você tem um agente Fluentd em cada host/container que envia logs para um Fluentd central
+#### Funcionamento: Um ou mais Fluentd atuam como forwarders e enviam os logs para um Fluentd aggregator usando o protocolo nativo do Fluentd (forward)
+Conceito Base
+```mermaid
+flowchart TD
+ subgraph Servidores_Com_Containers["Servidores_Com_Containers"]
+        A1["Fluentd Forwarder Node 1"]
+        A2["Fluentd Forwarder Node 2"]
+        A3["Fluentd Forwarder Node 3"]
+  end
+ subgraph Camada_de_Agregacao["Camada_de_Agregacao"]
+        B1["Fluentd Aggregator"]
+  end
+ subgraph Armazenamento["Armazenamento"]
+        C1["Elasticsearch"]
+        C2["S3, GCS, etc opcional"]
+  end
+    A1 --> B1
+    A2 --> B1
+    A3 --> B1
+    B1 --> C1 & C2
+```
+Arquitetura com HA
+```mermaid
+graph TD
+    subgraph Forwarders
+        A1[Node1 Fluentd]
+        A2[Node2 Fluentd]
+    end
+
+    subgraph Aggregators
+        B1[Aggregator 1]
+        B2[Aggregator 2]
+    end
+
+    subgraph Storage
+        C1[Elasticsearch]
+    end
+
+    A1 --> B1
+    A1 --> B2
+    A2 --> B1
+    A2 --> B2
+    B1 --> C1
+    B2 --> C1
+```
+#### Iniciar ambiente prd-ha
+```bash
+cd .\prd-ha\
+```
+```bash
+docker compose up --detach
+```
+#### Comando de teste
+```bash
+curl http://localhost:8080
+```
+
 ### quick-start
 Teste realizado com base na documentação oficial do Fluentd para deploy via Docker Compose.
 Foram utilizadas apenas configurações básicas com o objetivo de validar rapidamente o funcionamento da stack.
@@ -40,5 +99,3 @@ docker compose up --detach
 curl http://localhost:8080
 ```
 > Caso a aplicação web não inicie corretamente ao executar `docker compose up --detach`, basta inicializá-la manualmente separadamente.
-
-#### TO-DO - Subir Ambiente Similar a Produção
