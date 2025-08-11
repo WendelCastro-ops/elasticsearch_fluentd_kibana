@@ -1,0 +1,16 @@
+{
+  "ID": "fluentd-n2",
+  "Name": "fluentd",
+  "Tags": ["fluentd", "n2"],
+  "Address": "fluentd-n2",
+  "Port": 24224,
+  "Meta": {
+    "fluentd-image": "edge-debian"
+  },
+  "Check": {
+    "TCP": "fluentd-n2:24224",
+    "Interval": "10s",
+    "Timeout": "1s"
+  },
+  "EnableTagOverride": false
+}

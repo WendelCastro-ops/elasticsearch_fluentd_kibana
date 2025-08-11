@@ -1,0 +1,13 @@
+stream {
+    upstream fluentd_upstream {
+        {{ range service "fluentd" }}
+        server {{ .Address }}:{{ .Port }};
+        {{ end }}
+    }
+
+    server {
+        listen 24224;
+        proxy_pass fluentd_upstream;
+    }
+}
+

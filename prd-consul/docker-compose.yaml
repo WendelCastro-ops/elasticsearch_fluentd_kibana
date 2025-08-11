@@ -1,0 +1,127 @@
+services:
+  consul:
+    image: hashicorp/consul:1.21
+    container_name: consul
+    command: "agent -dev -client=0.0.0.0"
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    networks:
+      - efk
+  
+  consul-template:
+    image: hashicorp/consul-template:0.41
+    container_name: consul-template
+    user: root
+    volumes:
+      - consul-config:/consul
+      - ./consul/consul-template-config.hcl:/consul/consul-template-config.hcl
+      - ./nginx/nginx-template.conf.ctmpl:/consul/fluentd.conf.ctmpl
+    depends_on:
+      - consul
+    command: >
+      consul-template -config=/consul/consul-template-config.hcl
+    networks:
+      - efk
+
+  nginx:
+    image: nginx:stable-perl
+    container_name: nginx
+    volumes:
+      - consul-config:/consul
+    ports:
+      - "24226:24224"
+    depends_on:
+      - consul-template
+    networks:
+      - efk
+
+  fluentd-n1:
+    build:
+      context: ./fluentd-n1
+    container_name: fluentd-n1
+    volumes:
+      - ./fluentd-n1/conf:/fluentd/etc
+      - ./fluentd-n1/log:/fluentd/log
+      - ./fluentd-n1/buf:/fluentd/buffer
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    networks:
+      - efk
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  # fluentd-n2:
+  #   build:
+  #     context: ./fluentd-n2
+  #   container_name: fluentd-n2
+  #   volumes:
+  #     - ./fluentd-n2/conf:/fluentd/etc
+  #     - ./fluentd-n2/log:/fluentd/log
+  #     - ./fluentd-n2/buf:/fluentd/buffer
+  #   networks:
+  #     - efk
+  #   ports:
+  #     - "24225:24224"
+  #     - "24225:24224/udp"
+  #   depends_on:
+  #     elasticsearch:
+  #       condition: service_healthy
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.enabled=false
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - efk
+    healthcheck:
+      test: curl --silent --fail localhost:9200 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.1.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    networks:
+      - efk
+    healthcheck:
+      test: curl --silent --fail localhost:5601 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  web:
+    image: httpd
+    ports:
+      - "8080:80"
+    networks:
+      - efk
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: "{{.Name}}-{{.ID}}"
+
+networks:
+  efk:
+    driver: bridge
+
+volumes:
+  esdata:
+  consul-config:

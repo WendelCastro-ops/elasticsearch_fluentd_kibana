@@ -23,6 +23,75 @@ Centralizar e visualizar os logs gerados pelos containers utilizando uma stack e
 ### Planejamento do Ambiente de Teste
 #### Requisitos
 - Docker e Docker Compose.
+### PRD - Logging Driver with Consul
+```mermaid
+flowchart LR
+  subgraph Aplicações
+    A1[Container 1]
+    A2[Container 2]
+    A3[Container N]
+  end
+
+  subgraph Consul
+    C[Consul DNS & Health Checks]
+  end
+
+  subgraph Fluentd_HA[Fluentd Nodes Alta Disponibilidade]
+    F1[Fluentd Node 1]
+    F2[Fluentd Node 2]
+    F3[Fluentd Node N]
+  end
+
+  Elasticsearch[Elasticsearch Único]
+
+  %% Aplicações enviam logs via fluentd driver para Consul
+  A1 -->|fluentd-address=fluentd.service.consul| C
+  A2 -->|fluentd-address=fluentd.service.consul| C
+  A3 -->|fluentd-address=fluentd.service.consul| C
+
+  %% Consul resolve para Fluentd nodes ativos
+  C --> F1
+  C --> F2
+  C --> F3
+
+  %% Fluentd nodes enviam logs para Elasticsearch
+  F1 --> Elasticsearch
+  F2 --> Elasticsearch
+  F3 --> Elasticsearch
+```
+#### Iniciar ambiente prd-ha
+```bash
+cd .\prd-consul\
+```
+```bash
+docker compose up --detach
+```
+#### Comandos após compose up
+Registrar serviço no consul
+```bash
+curl --request PUT --data @fluentd-n1.json http://localhost:8500/v1/agent/service/register
+```
+Configurar e reinicializar o nginx, dentro do container do nginx:
+```bash
+cat /consul/fluentd.conf >> /etc/nginx/nginx.conf
+```
+```bash
+service nginx reload
+```
+A aplicação web não irá iniciar com o compose up pois o nginx precisa ser configurado antes, então após as configurações do nginx a aplicação web deve ser incializada com
+```bash
+docker compose up --detach
+```
+#### Comando de teste
+```bash
+curl http://localhost:8080
+```
+#### Observações
+- Como ficaria a separação em relação ao fluentd?
+Separar por tipo de log que o container gera, então para cada tipo de log se teria um fluentd ou separar por tipo de aplicação web, android, go, delphi e para cada um ter um fluentd
+- No modo de HA deve ter uma forma de identificar os containers que estão enviando os logs
+- No modo de HA deve ter rotação de logs
+
 
 ### PRD - Alta Disponibilidade
 #### Cenário: Você tem um agente Fluentd em cada host/container que envia logs para um Fluentd central

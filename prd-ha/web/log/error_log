@@ -72,3 +72,4 @@ AH00558: httpd: Could not reliably determine the server's fully qualified domain
 AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 172.18.0.6. Set the 'ServerName' directive globally to suppress this message
 [Thu Aug 07 18:31:22.506015 2025] [mpm_event:notice] [pid 1:tid 1] AH00489: Apache/2.4.65 (Unix) configured -- resuming normal operations
 [Thu Aug 07 18:31:22.507241 2025] [core:notice] [pid 1:tid 1] AH00094: Command line: 'httpd -D FOREGROUND'
+[Fri Aug 08 16:43:43.750993 2025] [mpm_event:notice] [pid 1:tid 1] AH00492: caught SIGWINCH, shutting down gracefully
