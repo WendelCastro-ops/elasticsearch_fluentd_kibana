@@ -24,6 +24,8 @@ Centralizar e visualizar os logs gerados pelos containers utilizando uma stack e
 #### Requisitos
 - Docker e Docker Compose.
 ### PRD - Logging Driver with Consul
+#### Cenário: Você tem uma camada de Fluentd para balancemento de carga com consul e nginx, e as aplicações enviam os logs diretos para essa camada de fluentd
+#### Funcionamento: As aplicações enviam os logs para um ou mais Fluentd que atuam como aggregator e enviam os logs para o elasticsearch
 ```mermaid
 flowchart LR
   subgraph Aplicações
@@ -59,7 +61,7 @@ flowchart LR
   F2 --> Elasticsearch
   F3 --> Elasticsearch
 ```
-#### Iniciar ambiente prd-ha
+#### Iniciar ambiente prd-consul
 ```bash
 cd .\prd-consul\
 ```
@@ -86,11 +88,13 @@ docker compose up --detach
 ```bash
 curl http://localhost:8080
 ```
+### Vantagens x Desvantagens
+| Vantagens  | Desvantangens |
+| ------------- | ------------- |
+| Menos I/O: Evita sobrecarga no host por escrita em massa de logs  | Integração: Se o fuentd ou rede ficar indisponível, os containers podem travar ou perder logs   |
+| Baixa Latência: Logs vão direto do container para o fluentd, sem escrita em disco  | Resiliência a falhas: O Driver fluentd no docker tem limitação e pode perder logs em caso de sobrecarga |
 #### Observações
-- Como ficaria a separação em relação ao fluentd?
-Separar por tipo de log que o container gera, então para cada tipo de log se teria um fluentd ou separar por tipo de aplicação web, android, go, delphi e para cada um ter um fluentd
-- No modo de HA deve ter uma forma de identificar os containers que estão enviando os logs
-- No modo de HA deve ter rotação de logs
+- Ideal para ambientes que precisam de informação em tempo real, que possuam rede estável e tolerância a alguma perda de log
 
 
 ### PRD - Alta Disponibilidade
@@ -151,7 +155,13 @@ docker compose up --detach
 ```bash
 curl http://localhost:8080
 ```
+### Vantagens x Desvantagens
+| Vantagens  | Desvantangens |
+| ------------- | ------------- |
+| Desacoplamento: Containers não dependem do destino final pois os logs são salvos localmente  | Maior latência: Logs passam pelo disco e depois vão para o master  |
+| Resiliente a falhas: Se o master ou elastic cair os workers continuam coletando os logs e depois reenviam  | Mais I/O no host: Gravação e Leitura de arquivos de log podem pesar em ambientes com muito tráfego  |
 #### Observações
+- Ideal para ambientes que precisam de armazenamento garantidos de logs e tolerância a falhas de rede/infra
 - Como ficaria a separação em relação ao fluentd?
 Separar por tipo de log que o container gera, então para cada tipo de log se teria um fluentd ou separar por tipo de aplicação web, android, go, delphi e para cada um ter um fluentd
 - No modo de HA deve ter uma forma de identificar os containers que estão enviando os logs
@@ -175,4 +185,4 @@ curl http://localhost:8080
 ```
 > Caso a aplicação web não inicie corretamente ao executar `docker compose up --detach`, basta inicializá-la manualmente separadamente.
 
-## TO-DO Comparar ambientes e listar vantagens e desvantagens
+## TO-DO Rotacionamento de logs
