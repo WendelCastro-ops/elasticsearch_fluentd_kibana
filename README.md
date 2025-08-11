@@ -175,4 +175,4 @@ curl http://localhost:8080
 ```
 > Caso a aplicação web não inicie corretamente ao executar `docker compose up --detach`, basta inicializá-la manualmente separadamente.
 
-## TO-DO Criar ambientes com infraestrutura diferente para comparar vantagens e desvantagens
+## TO-DO Comparar ambientes e listar vantagens e desvantagens
